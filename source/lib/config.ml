@@ -2,8 +2,8 @@
 
 (** Dimensions et marges de la fenêtre de jeu *)
 module WindowConfig = struct
-  let height = 600.
-  let width = 800.
+  let height = 580.
+  let width = 780.
   let margin = 10.
 end
 
