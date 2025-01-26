@@ -130,8 +130,11 @@ let collection_briques br_list =
   List.fold_left inserer_brique vide br_list
 
 let dessiner_brique ((x, y), couleur) =
+  let colors = Graphics.rgb 0 0 0 in
   Graphics.set_color couleur;
-  Graphics.fill_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height)
+  Graphics.fill_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height);
+  Graphics.set_color colors;
+  Graphics.draw_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height)
 
 let dessiner_briques briques =
   Quadtree.iter_val briques dessiner_brique
