@@ -33,8 +33,8 @@ let mouse_with_velocity =
   et un booléen indiquant si le bouton est appuyé
   @param dt pas de temps entre deux itérations
   @return flux de raquette *)
-let input_racket dt =
-  let mouse_flux = mouse_with_velocity dt in
+let input_racket =
+  let mouse_flux = mouse_with_velocity in
   Flux.map2
     (fun (x, velocity) button_down -> (x, velocity, button_down))
     mouse_flux
