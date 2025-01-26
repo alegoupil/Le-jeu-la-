@@ -20,7 +20,7 @@ let mouse_click =
   et sa vitesse approximée, calculée à partir du déplacement entre deux itérations
   @param dt pas de temps entre deux itérations
   @return flux de paires (position de la souris, vitesse de la souris) *)
-let mouse_with_velocity =
+let mouse_with_velocity dt =
   Flux.unfold
     (fun (prev_x, prev_time) ->
       let x, _ = Graphics.mouse_pos () in
@@ -33,8 +33,8 @@ let mouse_with_velocity =
   et un booléen indiquant si le bouton est appuyé
   @param dt pas de temps entre deux itérations
   @return flux de raquette *)
-let input_racket =
-  let mouse_flux = mouse_with_velocity in
+let input_racket dt =
+  let mouse_flux = mouse_with_velocity dt in
   Flux.map2
     (fun (x, velocity) button_down -> (x, velocity, button_down))
     mouse_flux
