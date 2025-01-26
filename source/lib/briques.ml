@@ -11,6 +11,12 @@ type t = br Quadtree.quadtree
 let nb_briques_hauteur = WindowConfig.width /. BrickConfig.width
 let nb_briques_largeur = WindowConfig.height /. BrickConfig.height
 
+(** [point_de_contact (x, y) (vx, vy)] calcule les points de contact de la balle en mouvement.
+  @param (x, y) la position actuelle de la balle
+  @param (vx, vy) le vecteur de vitesse de la balle
+  @return un quadruplet [(cx, cy, mx, my)] où :
+    - [(cx, cy)] représente le point de contact de la balle dans la direction du mouvement
+    - [(mx, my)] représente le point opposé avec une marge supplémentaire *)
 let point_de_contact (x, y) (vx, vy) =
   let norm = hypot vx vy in
   let scale k = (k *. vx /. norm, k *. vy /. norm) in
@@ -26,6 +32,11 @@ let%test "point_de_contact_vertical" =
   let result = point_de_contact (0., 0.) (0., 1.) in
   result = (0., BallConfig.radius, 0., -.BallConfig.radius -. 50.)
 
+(** [calculer_coordonnees_brique (x, y)] calcule les coordonnées de la brique contenant le point [(x, y)].
+  @param (x, y) les coordonnées d'un point dans l'espace du jeu
+  @return un couple [(coin_inf, coin_sup)] représentant :
+    - [coin_inf] : les coordonnées du coin inférieur gauche de la brique
+    - [coin_sup] : les coordonnées du coin supérieur droit de la brique *)
 let calculer_coordonnees_brique (x, y) =
   let abs = floor (x /. BrickConfig.width) *. BrickConfig.width in
   let ord = floor (y /. BrickConfig.height) *. BrickConfig.height in
@@ -46,6 +57,13 @@ let%test "point_proche_bord" =
   let attendu = ((0., 0.), (BrickConfig.width, BrickConfig.height)) in
   result = attendu
 
+(** [contact_brique brique pos_balle vecteur_vitesse] détermine si une balle entre en contact avec une brique.
+  @param brique la brique représentée par ses coordonnées inférieures et ses dimensions
+  @param pos_balle la position actuelle de la balle [(x, y)]
+  @param vecteur_vitesse le vecteur de vitesse de la balle [(vx, vy)]
+  @return un couple [(contact_vertical, contact_horizontal)] où :
+    - [contact_vertical] est [true] si la balle entre en contact avec la brique sur une face verticale
+    - [contact_horizontal] est [true] si la balle entre en contact avec la brique sur une face horizontale *)
 let contact_brique (brique : br) (pos_balle : float * float) (vecteur_vitesse : float * float) : bool * bool =
   let (coin_inf_x, coin_inf_y), _ = brique in
   let coin_sup_x = coin_inf_x +. BrickConfig.width in
@@ -79,6 +97,13 @@ let%test "aucun_contact" =
   let vecteur_vitesse = (1., 1.) in
   contact_brique brique pos_balle vecteur_vitesse = (false, false)
 
+(** [detecter_contact briques position_balle vecteur_vitesse] détecte si une collision entre la balle et une brique a lieu.
+  @param briques un quadtree contenant les briques actuelles
+  @param position_balle la position actuelle de la balle sous la forme [(x, y)]
+  @param vecteur_vitesse le vecteur de vitesse actuel de la balle sous la forme [(dx, dy)]
+  @return un couple [(contact_vertical, contact_horizontal)] indiquant :
+    - [contact_vertical] : [true] si un contact vertical avec une brique est détecté
+    - [contact_horizontal] : [true] si un contact horizontal avec une brique est détecté *)
 let detecter_contact briques (position_balle : float * float) (vecteur_vitesse : float * float) =
   let pc_x, pc_y, _, _ = point_de_contact position_balle vecteur_vitesse in
   let point_contact = fst (calculer_coordonnees_brique (pc_x, pc_y)) in
@@ -86,11 +111,24 @@ let detecter_contact briques (position_balle : float * float) (vecteur_vitesse :
   | None -> false, false
   | Some brique -> contact_brique brique position_balle vecteur_vitesse
 
+(** [maj_briques arbre_briques position_balle vecteur_vitesse] met à jour le quadtree des briques en supprimant celles qui entrent en collision avec la balle.
+  @param arbre_briques un quadtree contenant les briques actuelles
+  @param position_balle la position actuelle de la balle sous la forme [(x, y)]
+  @param vecteur_vitesse le vecteur de vitesse actuel de la balle sous la forme [(dx, dy)]
+  @return un couple [(nouvel_arbre, nombre_briques_supprimees)] où :
+    - [nouvel_arbre] est le quadtree mis à jour sans les briques touchées
+    - [nombre_briques_supprimees] est le nombre de briques qui ont été retirées *)
 let maj_briques arbre_briques position_balle vecteur_vitesse =
   Quadtree.filtre_compter_retirer arbre_briques (fun brique ->
     let contact_vertical, contact_horizontal = contact_brique brique position_balle vecteur_vitesse in
     not (contact_vertical || contact_horizontal))
 
+(** [inserer_brique br_qtree br] insère une nouvelle brique dans le quadtree à l'emplacement aligné correspondant.
+  @param br_qtree un quadtree contenant les briques actuelles
+  @param br une brique sous la forme [(coord, color)] où :
+    - [coord] représente la position de la brique [(x, y)]
+    - [color] est la couleur de la brique
+  @return le quadtree [br_qtree] mis à jour avec la nouvelle brique insérée *)
 let inserer_brique : br Quadtree.quadtree -> br -> br Quadtree.quadtree =
   fun br_qtree br ->
     let coord, color = br in
@@ -126,9 +164,17 @@ let%test "insertion_duplicat" =
 
 let vide = Quadtree.vide ((0., 0.), (WindowConfig.width, WindowConfig.height))
 
+(** [collection_briques br_list] crée un quadtree contenant toutes les briques de la liste donnée.
+  @param br_list une liste de briques sous la forme [(coord, color)] où :
+    - [coord] représente la position de la brique [(x, y)]
+    - [color] est la couleur de la brique
+  @return un quadtree contenant toutes les briques *)
 let collection_briques br_list =
   List.fold_left inserer_brique vide br_list
 
+(** [dessiner_brique (coord, couleur)] dessine une brique avec la position et la couleur données.
+  @param coord la position de la brique [(x, y)]
+  @param couleur la couleur de la brique, représentée sous forme d'un entier RGB *)
 let dessiner_brique ((x, y), couleur) =
   let colors = Graphics.rgb 0 0 0 in
   Graphics.set_color couleur;
@@ -136,5 +182,7 @@ let dessiner_brique ((x, y), couleur) =
   Graphics.set_color colors;
   Graphics.draw_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height)
 
+(** [dessiner_briques briques] dessine toutes les briques présentes dans le quadtree.
+  @param briques un quadtree contenant des briques sous la forme [(coord, color)] *)
 let dessiner_briques briques =
   Quadtree.map briques dessiner_brique
