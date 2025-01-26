@@ -20,7 +20,7 @@ let mouse_click =
   et sa vitesse approximée, calculée à partir du déplacement entre deux itérations
   @param dt pas de temps entre deux itérations
   @return flux de paires (position de la souris, vitesse de la souris) *)
-let mouse_with_velocity dt =
+let mouse_with_velocity =
   Flux.unfold
     (fun (prev_x, prev_time) ->
       let x, _ = Graphics.mouse_pos () in
