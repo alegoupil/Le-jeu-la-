@@ -86,7 +86,7 @@ let%test "aucun_contact" =
     | Some brique -> contact_brique brique position_balle vecteur_vitesse 
 
 
-(*let maj_briques arbre_briques position_balle vecteur_vitesse =
+(*)let maj_briques arbre_briques position_balle vecteur_vitesse =
   Quadtree.filter arbre_briques (fun brique ->
     let contact_vertical, contact_horizontal = contact_brique brique position_balle vecteur_vitesse in
     not (contact_vertical || contact_horizontal))*)

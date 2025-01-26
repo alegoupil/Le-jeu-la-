@@ -3,7 +3,7 @@ open Libnewtonoid
 open Iterator
 
 (* exemple d'ouvertue d'un tel module de la bibliotheque : *)
-(*open Game*)
+open Game
 
 module Init = struct
   let dt = 1000. /. 60. (* 60 Hz *)

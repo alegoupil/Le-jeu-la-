@@ -86,10 +86,22 @@ let%test "aucun_contact" =
     | Some brique -> contact_brique brique position_balle vecteur_vitesse 
 
 
-(*let maj_briques arbre_briques position_balle vecteur_vitesse =
-  Quadtree.filter arbre_briques (fun brique ->
+let maj_briques arbre_briques position_balle vecteur_vitesse =
+  let rec aux arbre filtre =
+    match arbre with
+    | Vide case -> Vide case
+    | Feuille (case, coord, elem) ->
+        if filtre elem then Feuille (case, coord, elem) else Vide case
+    | Noeud (case, t1, t2, t3, t4) ->
+        let t1 = aux t1 filtre in
+        let t2 = aux t2 filtre in
+        let t3 = aux t3 filtre in
+        let t4 = aux t4 filtre in
+        clean_tree (Noeud (case, t1, t2, t3, t4))
+  in
+  aux arbre_briques (fun brique ->
     let contact_vertical, contact_horizontal = contact_brique brique position_balle vecteur_vitesse in
-    not (contact_vertical || contact_horizontal))*)
+    not (contact_vertical || contact_horizontal))
 
 let inserer_brique arbre_briques brique =
   let coordonnees_alignees, _ = calculer_coordonnees_brique (fst brique) in
@@ -105,4 +117,5 @@ let dessiner_brique ((x, y), couleur) =
   Graphics.set_color couleur;
   Graphics.fill_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height)
 
-let dessiner_briques briques = Quadtree.map briques dessiner_brique
+let dessiner_briques briques =
+  Quadtree.map briques dessiner_brique
