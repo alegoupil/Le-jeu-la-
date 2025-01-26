@@ -18,5 +18,8 @@ module Iterator = Libnewtonoid__Iterator
 (** @canonical Libnewtonoid.Quadtree *)
 module Quadtree = Libnewtonoid__Quadtree
 
+(** @canonical Libnewtonoid.Quadtreev2 *)
+module Quadtreev2 = Libnewtonoid__Quadtreev2
+
 (** @canonical Libnewtonoid.Raquette *)
 module Raquette = Libnewtonoid__Raquette

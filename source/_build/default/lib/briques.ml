@@ -94,7 +94,6 @@ let maj_briques arbre_briques position_balle vecteur_vitesse =
 let inserer_brique : br Quadtree.t -> br -> br Quadtree.t =
   fun br_qtree br ->
     let coord, color = br in
-    (* Aligner les coordonnées avant d'insérer *)
     let coord_aligned, _ = calculer_coordonnees_brique coord in
     insert br_qtree coord_aligned (coord_aligned, color)
 

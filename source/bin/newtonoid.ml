@@ -68,6 +68,6 @@ let draw flux_etat =
 
 (* Initialisation et lancement du jeu *)
 let () =
-  let etat_initial = etat_init 0 GameConfig.initial_lives in
+  let etat_initial = etat_init 0 GameConfig.initial_lives ((Briques.collection_briques BrickConfig.initial_bricks),0) in
   let flux_etat = update_etat etat_initial in
   draw flux_etat

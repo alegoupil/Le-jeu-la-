@@ -12,7 +12,7 @@ module BallConfig = struct
   let radius = 10.0
 
   let initial_position = (50.,50.)
-  let initial_speed = (5.,5.)
+  let initial_speed = (500.,500.)
   let color = Graphics.rgb 255 0 0
   
 end

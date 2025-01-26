@@ -10,12 +10,12 @@ type lives = int
 (** état du jeu *)
 type etat = raquette * ball * score * lives * (Briques.t * int)
 
-let etat_init score lives=
+let etat_init score lives briques=
  let raquette = 0., RacketConfig.position_y, false in
  let ball = BallConfig.initial_position, BallConfig.initial_speed, false in
  let score = score in
  let lives = lives in
- let briques = Briques.collection_briques BrickConfig.initial_bricks, 0 in
+ let briques = briques in
  raquette, ball, score, lives, briques
 
 (** [integre] fonction qui intègre/somme les valeurs successives du flux avec 
@@ -161,7 +161,7 @@ let rec update_etat : etat -> etat Flux.t =
  in
  (* flux si le joueur perd des vies (termine la partie s'il n'en a plus) *)
  let flux_death _ =
- if lives == 1 then Flux.vide else update_etat (etat_init score (lives - 1))
+ if lives == 1 then Flux.vide else update_etat (etat_init score (lives - 1) (br_qtree, nb_br_touched))
  in
  (* le flux se met à jour à chaque contact ou se réinitialise en cas de mort *) 
  Flux.unless (Flux.unless flux_continue update_cond update_etat) death_cond flux_death
