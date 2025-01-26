@@ -19,14 +19,14 @@ let etat_init score lives briques=
  let briques = briques in
  raquette, ball, score, lives, briques
 
-(** [integre dt flux] intègre un flux de valeurs avec un pas de temps [dt].
-  @param dt le pas de temps utilisé pour l'intégration
+(** [integre timestep flux] intègre un flux de valeurs avec un pas de temps [timestep].
+  @param timestep le pas de temps utilisé pour l'intégration
   @param flux le flux de valeurs à intégrer
   @return un flux correspondant à l'intégrale des valeurs *)
-let integre dt flux =
-  assert (dt > 0.);
+let integre timestep flux =
+  assert (timestep > 0.);
   let init = 0., 0. in
-  let iter (acc1, acc2) (flux1, flux2) = acc1 +. (dt *. flux1), acc2 +. (dt *. flux2) in
+  let iter (acc1, acc2) (flux1, flux2) = acc1 +. (timestep *. flux1), acc2 +. (timestep *. flux2) in
   let rec acc = Tick (lazy (Some (init, Flux.map2 iter acc flux))) in
   acc
 
