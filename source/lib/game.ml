@@ -7,6 +7,8 @@ open Raquette
 open Input
 let game_hello () = print_endline "Hello, Newtonoiders!"
 
+let briques = Quadtree.vide ((1.,0.),(0.5,0.5))
+
 module FreeFall () =
   struct
     let (|+|) (x1, y1) (x2, y2) = (x1 +. x2, y1 +. y2)
@@ -46,16 +48,16 @@ let%test "vector_scaling" =
   
 let%test "freefall_integration" =
   let open FreeFall () in
-  let flux = Flux.constant (0.0, -gravity) in
-  match integre timestep flux with
-  | Flux.Tick (lazy (Some ((x, y), _))) -> x = 0.0 && y = 0.0
+  let flux = Flux.constant (0.0, -. PhysicsConfig.gravity) in
+  match integre PhysicsConfig.timestep flux with
+  | Tick (lazy (Some ((x, y), _))) -> x = 0.0 && y = 0.0
   | _ -> false
   
 let%test "freefall_run" =
   let open FreeFall () in
   let position0 = (0.0, 100.0) in
   let vitesse0 = (10.0, 0.0) in match run (position0, vitesse0) with
-  | Flux.Tick (lazy ((pos, vel))) ->
+  | Tick (lazy (Some ((pos, vel), _))) ->
   pos = position0 && vel = vitesse0
   | _ -> false 
 
@@ -92,7 +94,7 @@ module Bouncing () =
     
     let rebond ((x, y), (dx, dy)) (mx, mdx) =
       if (Raquette.collision mx (x,y) dy) then
-        (x,y), (1. +. impulse_factor) *. dx, -. dy
+        (x,y), ((1. +. PhysicsConfig.impulse_factor) *. dx, -. dy)
       else 
         let (c_vertical, c_horizontal) = Briques.detecter_contact briques (x,y) (dx,dy) in
         (x, y),
@@ -101,7 +103,7 @@ module Bouncing () =
 
     let contact ((x, y), (dx, dy)) =
       let (c_vertical, c_horizontal) = Briques.detecter_contact briques (x,y) (dx,dy) in
-      c_vertical || c_horizontal || (Raquette.collision (fst Graphics.mouse_pos ()) (x,y) dy)
+      c_vertical || c_horizontal || (Raquette.collision (float_of_int (fst (Graphics.mouse_pos ()))) (x,y) dy)
 
 
     module FF = FreeFall ()
@@ -112,7 +114,7 @@ module Bouncing () =
         unless (FF.run etat0) contact (fun etat -> run_aux (rebond etat (mx,mdx)) m_flux_next)
     
     let run etat0 =
-      let mouse_flux = mouse_with_velocity timestep in
+      let mouse_flux = mouse_with_velocity PhysicsConfig.timestep in
       run_aux etat0 mouse_flux
   end
 
