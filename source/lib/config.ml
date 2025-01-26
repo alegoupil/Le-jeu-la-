@@ -40,7 +40,7 @@ module BrickConfig = struct
   (* Liste initiale des briques : ((position_x, position_y) * couleur) list *)
   let initial_bricks =
     let create_brick x y =
-      (x, y), Graphics.rgb (Random.int 255) (Random.int 255) (Random.int 255)
+      (x, y), Graphics.rgb 255 255 0
     in
     (* Remplit l'écran de briques *)
     let rec fill_bricks acc x y max_x max_y =
