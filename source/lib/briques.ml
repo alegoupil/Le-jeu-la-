@@ -4,7 +4,7 @@ open Quadtree
 (** type d'une brique : coordonnées de son coin inférieur gauche et sa couleur *)
 type br = (float * float) * Graphics.color
 (** collection contenant toutes les briques *)
-type t = br Quadtree.t
+type t = br Quadtree.quadtree
 
 (** nombre de briques en longueur et en hauteur : les briques sont agencées sur
     une grille de briques avec toutes les briques de la même taille *)
@@ -87,25 +87,25 @@ let detecter_contact briques (position_balle : float * float) (vecteur_vitesse :
   | Some brique -> contact_brique brique position_balle vecteur_vitesse
 
 let maj_briques arbre_briques position_balle vecteur_vitesse =
-  Quadtree.filter_val_count_removal arbre_briques (fun brique ->
+  Quadtree.filtre_compter_retirer arbre_briques (fun brique ->
     let contact_vertical, contact_horizontal = contact_brique brique position_balle vecteur_vitesse in
     not (contact_vertical || contact_horizontal))
 
-let inserer_brique : br Quadtree.t -> br -> br Quadtree.t =
+let inserer_brique : br Quadtree.quadtree -> br -> br Quadtree.quadtree =
   fun br_qtree br ->
     let coord, color = br in
     let coord_aligned, _ = calculer_coordonnees_brique coord in
     insert br_qtree coord_aligned (coord_aligned, color)
 
 let%test "insertion_unique" =
-  let arbre_vide = Quadtree.empty ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
+  let arbre_vide = Quadtree.vide ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
   let brique = ((50., 50.), Graphics.red) in
   let coord_aligned, _ = calculer_coordonnees_brique (50., 50.) in
   let arbre_avec_brique = inserer_brique arbre_vide brique in
   Quadtree.get arbre_avec_brique coord_aligned = Some (coord_aligned, Graphics.red)
 
 let%test "insertion_multiple" =
-  let arbre_vide = Quadtree.empty ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
+  let arbre_vide = Quadtree.vide ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
   let brique1 = ((50., 50.), Graphics.red) in
   let brique2 = ((150., 50.), Graphics.blue) in
   let coord1, _ = calculer_coordonnees_brique (50., 50.) in
@@ -115,7 +115,7 @@ let%test "insertion_multiple" =
   && Quadtree.get arbre coord2 = Some (coord2, Graphics.blue)
 
 let%test "insertion_duplicat" =
-  let arbre_vide = Quadtree.empty ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
+  let arbre_vide = Quadtree.vide ((0., 0.), (WindowConfig.width, WindowConfig.height)) in
   let brique1 = ((50., 50.), Graphics.red) in
   let brique2 = ((50., 50.), Graphics.green) in
   let coord_aligned, _ = calculer_coordonnees_brique (50., 50.) in
@@ -124,7 +124,7 @@ let%test "insertion_duplicat" =
   Quadtree.get arbre coord_aligned = Some (coord_aligned, Graphics.green)
 
 
-let vide = Quadtree.empty ((0., 0.), (WindowConfig.width, WindowConfig.height))
+let vide = Quadtree.vide ((0., 0.), (WindowConfig.width, WindowConfig.height))
 
 let collection_briques br_list =
   List.fold_left inserer_brique vide br_list
@@ -137,4 +137,4 @@ let dessiner_brique ((x, y), couleur) =
   Graphics.draw_rect (int_of_float x) (int_of_float y) (int_of_float BrickConfig.width) (int_of_float BrickConfig.height)
 
 let dessiner_briques briques =
-  Quadtree.iter_val briques dessiner_brique
+  Quadtree.map briques dessiner_brique
