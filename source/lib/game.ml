@@ -37,9 +37,9 @@ let integre timestep flux =
   @param (dx, dy) vitesse de la balle
   @return [true] si la balle entre en contact avec une surface verticale, [false] sinon *)
 let contact_x br_qtree (x, y) (dx, dy) =
-  (x > WindowConfig.width && dx >= 0.0)
-  || (x < 0.0 && dx <= 0.0)
-  || fst (Briques.detecter_contact br_qtree (x, y) (dx, dy))
+  let hors_bord_gauche = x < 0.0 && dx <= 0.0 in
+  let hors_bord_droite = x > WindowConfig.width && dx >= 0.0 in
+  hors_bord_gauche || hors_bord_droite || fst (Briques.detecter_contact br_qtree (x, y) (dx, dy))
 
 (** [contact_y mouse_x br_qtree (x, y) (dx, dy)] vérifie si la balle entre en contact avec une surface horizontale.
   @param mouse_x position de la raquette
@@ -48,9 +48,9 @@ let contact_x br_qtree (x, y) (dx, dy) =
   @param (dx, dy) vitesse de la balle
   @return [true] si la balle entre en contact avec une surface horizontale, [false] sinon *)
 let contact_y mouse_x br_qtree (x, y) (dx, dy) =
-  (y > WindowConfig.height && dy >= 0.0)
-  || Raquette.collision mouse_x (x, y) dy
-  || snd (Briques.detecter_contact br_qtree (x, y) (dx, dy))
+  let hors_bord_haut = y > WindowConfig.height && dy >= 0.0 in
+  let contact_raquette = Raquette.collision mouse_x (x, y) dy in
+  hors_bord_haut || contact_raquette || snd (Briques.detecter_contact br_qtree (x, y) (dx, dy))
 
 (** [rebond_x br_qtree (x, y) (dx, dy)] calcule la nouvelle vitesse sur l'axe x après un éventuel rebond horizontal.
   @param br_qtree arbre des briques
@@ -58,7 +58,9 @@ let contact_y mouse_x br_qtree (x, y) (dx, dy) =
   @param (dx, dy) vitesse de la balle
   @return nouvelle vitesse sur l'axe x après un rebond *)
 let rebond_x br_qtree (x, y) (dx, dy) =
-  if contact_x br_qtree (x, y) (dx, dy) then -.dx else dx
+  match contact_x br_qtree (x, y) (dx, dy) with
+  | true -> -.dx
+  | false -> dx
 
 (** [rebond_y br_qtree mouse_x (x, y) (dx, dy)] calcule la nouvelle vitesse sur l'axe y après un éventuel rebond vertical.
   @param br_qtree arbre des briques
@@ -67,7 +69,9 @@ let rebond_x br_qtree (x, y) (dx, dy) =
   @param (dx, dy) vitesse de la balle
   @return nouvelle vitesse sur l'axe y après un rebond*)
 let rebond_y br_qtree mouse_x (x, y) (dx, dy) =
-  if contact_y mouse_x br_qtree (x, y) (dx, dy) then -.dy else dy
+  match contact_y mouse_x br_qtree (x, y) (dx, dy) with
+  | true -> -.dy
+  | false -> dy
 
 
 (** [update_score score nb_br_touched] met à jour le score du joueur en fonction des briques touchées.
