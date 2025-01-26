@@ -1,9 +1,9 @@
-# dune exec bin/newtonoid.exe
+# dune build
 # OCAMLPARAM: unset
 # Shared cache: disabled
-# Workspace root: "/home/all0905/Annee 2/PF/Projet/source"
+# Workspace root: "/home/all0905/Annee 2/PF/Le-jeu-la-/source"
 # Auto-detected concurrency: 20
-$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_4e358e_output
+$ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_01a4d7_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -23,15 +23,15 @@ $ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_4e358e_out
 #      map
 #        { "DUNE_OCAML_HARDCODED" : "/applications/opam-4.11.0/4.11.0/lib"
 #        ; "DUNE_OCAML_STDLIB" : "/applications/opam-4.11.0/4.11.0/lib/ocaml"
-#        ; "DUNE_SOURCEROOT" : "/home/all0905/Annee 2/PF/Projet/source"
+#        ; "DUNE_SOURCEROOT" : "/home/all0905/Annee 2/PF/Le-jeu-la-/source"
 #        ; "INSIDE_DUNE" :
-#            "/home/all0905/Annee 2/PF/Projet/source/_build/default"
+#            "/home/all0905/Annee 2/PF/Le-jeu-la-/source/_build/default"
 #        ; "OCAMLFIND_IGNORE_DUPS_IN" :
-#            "/home/all0905/Annee 2/PF/Projet/source/_build/install/default/lib"
+#            "/home/all0905/Annee 2/PF/Le-jeu-la-/source/_build/install/default/lib"
 #        ; "OCAMLPATH" :
-#            "/home/all0905/Annee 2/PF/Projet/source/_build/install/default/lib"
+#            "/home/all0905/Annee 2/PF/Le-jeu-la-/source/_build/install/default/lib"
 #        ; "OCAMLTOP_INCLUDE_PATH" :
-#            "/home/all0905/Annee 2/PF/Projet/source/_build/install/default/lib/toplevel"
+#            "/home/all0905/Annee 2/PF/Le-jeu-la-/source/_build/install/default/lib/toplevel"
 #        ; "OCAML_COLOR" : "always"
 #        ; "OPAMCOLOR" : "always"
 #        }
@@ -110,3 +110,11 @@ $ /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -config > /tmp/dune_4e358e_out
 #      ; windows_unicode = false
 #      }
 #  }
+$ (cd _build/default && .ppx/bfcab61e6a21ecf6d2f80029fc1ef484/ppx.exe --cookie 'inline_tests="enabled"' --cookie 'library-name="libnewtonoid"' -o lib/briques.pp.ml --impl lib/briques.ml -corrected-suffix .ppx-corrected -diff-cmd - -dump-ast)
+$ (cd _build/default && /applications/opam-4.11.0/4.11.0/bin/ocamldep.opt -modules -impl lib/briques.pp.ml) > _build/default/lib/.libnewtonoid.objs/libnewtonoid__Briques.impl.d
+$ (cd _build/default && /applications/opam-4.11.0/4.11.0/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -warn-error -A -g -bin-annot -I lib/.libnewtonoid.objs/byte -I /applications/opam-4.11.0/4.11.0/lib/base -I /applications/opam-4.11.0/4.11.0/lib/base/base_internalhash_types -I /applications/opam-4.11.0/4.11.0/lib/base/caml -I /applications/opam-4.11.0/4.11.0/lib/base/shadow_stdlib -I /applications/opam-4.11.0/4.11.0/lib/graphics -I /applications/opam-4.11.0/4.11.0/lib/jane-street-headers -I /applications/opam-4.11.0/4.11.0/lib/ppx_compare/runtime-lib -I /applications/opam-4.11.0/4.11.0/lib/ppx_enumerate/runtime-lib -I /applications/opam-4.11.0/4.11.0/lib/ppx_hash/runtime-lib -I /applications/opam-4.11.0/4.11.0/lib/ppx_inline_test/config -I /applications/opam-4.11.0/4.11.0/lib/ppx_inline_test/runtime-lib -I /applications/opam-4.11.0/4.11.0/lib/ppx_sexp_conv/runtime-lib -I /applications/opam-4.11.0/4.11.0/lib/sexplib0 -I /applications/opam-4.11.0/4.11.0/lib/time_now -no-alias-deps -opaque -open Libnewtonoid -o lib/.libnewtonoid.objs/byte/libnewtonoid__Briques.cmo -c -impl lib/briques.pp.ml)
+> File "lib/briques.ml", line 90, characters 2-17:
+> 90 |   Quadtree.filter arbre_briques (fun brique ->
+>        ^^^^^^^^^^^^^^^
+> Error: Unbound value Quadtree.filter
+[2]

@@ -1,4 +1,5 @@
 (** Module Input *)
+open Iterator
 
 (** Flux de paires (abscisse souris, booléen vrai si bouton appuyé) *)
 val mouse : (float * bool) Flux.t

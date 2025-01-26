@@ -3,7 +3,7 @@ open Libnewtonoid
 open Iterator
 
 (* exemple d'ouvertue d'un tel module de la bibliotheque : *)
-open Game
+(*open Game*)
 
 module Init = struct
   let dt = 1000. /. 60. (* 60 Hz *)
@@ -48,4 +48,6 @@ let draw flux_etat =
   Format.printf "Score final : %d@\n" score;
   Graphics.close_graph ()
 
-let () = game_hello ()
+let () = game_hello ();
+  let position0 = (300., 400.) in
+  let vitesse0 = (25., 15.) in FreeFall.run(position0, vitesse0)
