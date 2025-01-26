@@ -1,5 +1,9 @@
 open Config
 open Quadtree
+<<<<<<< HEAD
+=======
+
+>>>>>>> 05321d04c76aa9edccced0e2b2ba58edb76e38f2
 (** type d'une brique : coordonnées de son coin inférieur gauche et sa couleur *)
 type br = (float * float) * Graphics.color
 (** collection contenant toutes les briques *)
