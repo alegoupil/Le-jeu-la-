@@ -48,6 +48,6 @@ let draw flux_etat =
   Format.printf "Score final : %d@\n" score;
   Graphics.close_graph ()
 
-let () = game_hello ();
+(**let () = game_hello ();
   let position0 = (300., 400.) in
-  let vitesse0 = (25., 15.) in FreeFall.run(position0, vitesse0)
+  let vitesse0 = (25., 15.) in FreeFall.run(position0, vitesse0)**)

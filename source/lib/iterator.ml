@@ -12,6 +12,11 @@ module type Intf = sig
   val uncons : 'a t -> ('a * 'a t) option
   val apply : ('a -> 'b) t -> 'a t -> 'b t
   val map2 : ('a -> 'b -> 'c) -> 'a t -> 'b t -> 'c t
+  val map3 : ('a -> 'b -> 'c -> 'd) -> 'a t -> 'b t -> 'c t -> 'd t
+  val map4 : ('a -> 'b -> 'c -> 'd -> 'e) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t
+  val map5 : ('a -> 'b -> 'c -> 'd -> 'e -> 'f) -> 'a t -> 'b t -> 'c t -> 'd t -> 'e t ->'f t
+  (**insère un flux dans un autre en partant du premier élément qui ne vérifie pas le prédicat. *)
+  val unless : 'a t -> ('a -> bool) -> ('a -> 'a t) -> 'a t
 end
 
 type 'a flux = Tick of ('a * 'a flux) option Lazy.t
@@ -57,4 +62,14 @@ module Flux : Intf with type 'a t = 'a flux = struct
   (* implantation rapide mais inefficace de map *)
   let map f i = apply (constant f) i
   let map2 f i1 i2 = apply (apply (constant f) i1) i2
+  let map3 f i1 i2 i3 = apply (apply (apply (constant f) i1) i2) i3
+  let map4 f i1 i2 i3 i4 = apply (apply (apply (apply (constant f) i1) i2) i3) i4
+  let map5 f i1 i2 i3 i4 i5 = apply (apply (apply (apply (apply (constant f) i1) i2) i3) i4) i5
+  let rec unless flux cond f_flux =
+    Tick
+      (lazy
+        (match uncons flux with
+         | None -> None
+         | Some (a, fl) ->
+           if cond a then uncons (f_flux a) else Some (a, unless fl cond f_flux)))
 end

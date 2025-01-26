@@ -1,5 +1,5 @@
 open Config
-
+open Quadtree
 (** type d'une brique : coordonnées de son coin inférieur gauche et sa couleur *)
 type br = (float * float) * Graphics.color
 (** collection contenant toutes les briques *)
@@ -87,19 +87,7 @@ let%test "aucun_contact" =
 
 
 let maj_briques arbre_briques position_balle vecteur_vitesse =
-  let rec aux arbre filtre =
-    match arbre with
-    | Vide case -> Vide case
-    | Feuille (case, coord, elem) ->
-        if filtre elem then Feuille (case, coord, elem) else Vide case
-    | Noeud (case, t1, t2, t3, t4) ->
-        let t1 = aux t1 filtre in
-        let t2 = aux t2 filtre in
-        let t3 = aux t3 filtre in
-        let t4 = aux t4 filtre in
-        clean_tree (Noeud (case, t1, t2, t3, t4))
-  in
-  aux arbre_briques (fun brique ->
+  Quadtree.filtre_compter_retirer arbre_briques (fun brique ->
     let contact_vertical, contact_horizontal = contact_brique brique position_balle vecteur_vitesse in
     not (contact_vertical || contact_horizontal))
 

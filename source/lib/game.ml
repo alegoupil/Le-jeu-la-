@@ -1,140 +1,167 @@
 open Iterator
-
 open Config
-
-open Briques
-open Raquette
 open Input
-let game_hello () = print_endline "Hello, Newtonoiders!"
+(** position * vitesse * est_lancée *)
+type ball = (float * float) * (float * float) * bool
+(** position souris (= position raquette) * vitesse * est_souris_cliquée *)
+type raquette = float * float * bool
+type score = int
+type lives = int
+(** état du jeu *)
+type etat = raquette * ball * score * lives * (Briques.t * int)
 
-let briques = Quadtree.vide ((1.,0.),(0.5,0.5))
+let etat_init score lives=
+ let raquette = 0., RacketConfig.position_y, false in
+ let ball = BallConfig.initial_position, BallConfig.initial_speed, false in
+ let score = score in
+ let lives = lives in
+ let briques = Briques.collection_briques BrickConfig.initial_bricks, 0 in
+ raquette, ball, score, lives, briques
 
-module FreeFall () =
-  struct
-    let (|+|) (x1, y1) (x2, y2) = (x1 +. x2, y1 +. y2)
-    let (|*|) k (x, y) = (k *. x, k *. y)
+(** [integre] fonction qui intègre/somme les valeurs successives du flux avec 
+ un pas de temps dt et une valeur initiale nulle, i.e. 
+ acc_0 = 0; acc_{i+1} = acc_{i} + dt * flux_{i}
+ @param dt pas de temps
+ @param flux flux à intégrer
+ @return flux intégré *)
+let integre dt flux =
+ (* valeur initiale de l'intégrateur *)
+ let init = 0., 0. in
+ (* fonction auxiliaire de calcul de acc_{i} + dt * flux_{i} *)
+ let iter (acc1, acc2) (flux1, flux2) = acc1 +. (dt *. flux1), acc2 +. (dt *. flux2) in
+ (* définition récursive du flux acc *)
+ let rec acc = Tick (lazy (Some (init, Flux.map2 iter acc flux))) in
+ acc
 
-    let integre dt flux =
-      let init = (0., 0.) in
-      let rec acc =
-        Tick (lazy (Some (init, Flux.map2 (fun a f -> a |+| (dt |*| f)) acc flux)))
-      in acc
+(** [contact_x] teste le contact avec une surface verticale
+ (bords de la fenêtre ou briques)
+ @param br_qtree arbre des briques
+ @param (x, y) position de la balle
+ @param (dx, dy) vitesse de la balle
+ @return true si la balle est en contact avec une surface verticale *)
+let contact_x br_qtree (x, y) (dx, dy) =
+ (x > WindowConfig.width && dx >= 0.0)
+ || (x < 0.0 && dx <= 0.0)
+ || fst (Briques.detecter_contact br_qtree (x, y) (dx, dy))
 
-    let g = PhysicsConfig.gravity;;
-    (* r = r0 + Integ dr
-       dr = dr0 + Integ ddr
-       ddr = 0, -g
-     *)
+(** [contact_y] teste le contact avec une surface horizontale
+ (bord supérieur de la fenêtre, raquette ou briques)
+ @param mouse_x position de la souris (= position de la raquette)
+ @param br_qtree arbre des briques
+ @param (x, y) position de la balle
+ @param (dx, dy) vitesse de la balle
+ @return true si la balle est en contact avec une surface horizontale *)
+let contact_y mouse_x br_qtree (x, y) (dx, dy) =
+ (y > WindowConfig.height && dy >= 0.0)
+ || Raquette.collision mouse_x (x, y) dy
+ || snd (Briques.detecter_contact br_qtree (x, y) (dx, dy))
 
-    let run (position0, vitesse0) =
-      let acceleration = Flux.constant (0., -. g) in (*à augmenter avec le score*)
-      let vitesse      = Flux.(map2 ( |+| ) (constant vitesse0) (integre PhysicsConfig.timestep acceleration)) in
-      let position     = Flux.(map2 ( |+| ) (constant position0) (integre PhysicsConfig.timestep vitesse)) in
-      Flux.map2 (fun a b -> (a, b)) position vitesse
-  end
+(** [rebond_x] change la vitesse si rebond sur une surface horizontale
+ @param br_qtree arbre des briques
+ @param (x, y) position de la balle
+ @param (dx, dy) vitesse de la balle
+ @return nouvelle vitesse de la balle après un éventuel rebond horizontal *)
+let rebond_x br_qtree p (dx, dy) = if contact_x br_qtree p (dx, dy) then -.dx else dx
 
-let%test "vector_addition" = 
-  let open FreeFall () in
-  let v1 = (1.0, 2.0) in
-  let v2 = (3.0, 4.0) in
-  let result = v1 |+| v2 in
-  result = (4.0, 6.0)
-  
-let%test "vector_scaling" =
-  let open FreeFall () in
-  let v = (1.0, 2.0) in
-  let result = 2.0 |*| v in
-  result = (2.0, 4.0)
-  
-let%test "freefall_integration" =
-  let open FreeFall () in
-  let flux = Flux.constant (0.0, -. PhysicsConfig.gravity) in
-  match integre PhysicsConfig.timestep flux with
-  | Tick (lazy (Some ((x, y), _))) -> x = 0.0 && y = 0.0
-  | _ -> false
-  
-let%test "freefall_run" =
-  let open FreeFall () in
-  let position0 = (0.0, 100.0) in
-  let vitesse0 = (10.0, 0.0) in match run (position0, vitesse0) with
-  | Tick (lazy (Some ((pos, vel), _))) ->
-  pos = position0 && vel = vitesse0
-  | _ -> false 
+(** [rebond_y] change la vitesse si rebond sur une surface verticale
+ @param mouse_x position de la souris (= position de la raquette)
+ @param br_qtree arbre des briques
+ @param (x, y) position de la balle
+ @param (dx, dy) vitesse de la balle
+ @return nouvelle vitesse de la baller après un éventuel rebond vertical *)
+let rebond_y br_qtree mouse_x p (dx, dy) =
+ if contact_y mouse_x br_qtree p (dx, dy) then -.dy else dy
 
+(** [update_score] crée le flux de score par rapport au score précédent et au nombre de briques touchées
+ @param (score, lives) score et vies actuels (vies non modifiées)
+ @param nb_br_touched nombre de briques touchées par la balle depuis la dernière mise à jour
+ @return flux d'informations sur le jeu *)
+let update_info score nb_br_touched =
+ Flux.constant (score + (nb_br_touched * BrickConfig.points_per_brick))
 
-module Bouncing () =
-  struct
-    (* version avec unfold sans récursivité directe *)
-    let unless flux cond f_cond =
-      Flux.unfold (fun (init, f) ->
-          match Flux.uncons f with
-               | None         -> None
-               | Some (v, f') -> if not (init && cond v)
-                                 then Some (v, (init, f'))
-                                 else match Flux.uncons (f_cond v) with
-                                      | None         -> None
-                                      | Some (v, f') -> Some (v, (false, f'))
-        ) (true, flux)
-
-    (* version avec récursivité, donc paresse explicite *)
-    let rec unless flux cond f_cond =
-      Tick (lazy (
-                match Flux.uncons flux with
-                | None        -> None
-                | Some (t, q) -> if cond t then Flux.uncons (f_cond t) else Some (t, unless q cond f_cond)
-        ))
-
-    (*Briques.detecter_contact briques (position_balle : float * float) (vecteur_vitesse : float * float) -> false, true contact horizontal*) 
-    (** [contact] vérifie si la balle entre en collision avec la raquette.
-    @param mouse_x Position horizontale de la souris.
-    @param (bx, by) Position actuelle de la balle.
-    @param dy Vitesse verticale de la balle.
-    @return [true] si la balle est en collision avec la raquette, [false] sinon.
-    let collision mouse_x (bx, by) dy *)
-    
-    let rebond ((x, y), (dx, dy)) (mx, mdx) =
-      if (Raquette.collision mx (x,y) dy) then
-        (x,y), ((1. +. PhysicsConfig.impulse_factor) *. dx, -. dy)
-      else 
-        let (c_vertical, c_horizontal) = Briques.detecter_contact briques (x,y) (dx,dy) in
-        (x, y),
-        ((if c_horizontal then -. dx else dx),
-        (if c_vertical then -. dy else dy))
-
-    let contact ((x, y), (dx, dy)) =
-      let (c_vertical, c_horizontal) = Briques.detecter_contact briques (x,y) (dx,dy) in
-      c_vertical || c_horizontal || (Raquette.collision (float_of_int (fst (Graphics.mouse_pos ()))) (x,y) dy)
+(** [update_raquette] crée le flux de raquette (position, vitesse et s'il y a clic gauche)
+ @return flux de raquette *)
+let update_raquette () = Input.input_racket PhysicsConfig.timestep
 
 
-    module FF = FreeFall ()
+(** [update_balle] crée le flux de balle (position, vitesse et si elle est lancée)
+ @param raquette_flux flux de raquette
+ @param raquette raquette
+ @param ball balle
+ @param br_qtree arbre des briques
+ @return flux de balle *)
+let update_balle : raquette flux -> raquette -> ball -> Briques.t -> ball Flux.t =
+ fun raquette_flux
+ (mouse_x, mouse_dx, mouse_down)
+ ((x, y), (dx, dy), is_launched)
+ br_qtree ->
+ (* passe à vrai une seule fois et le reste : quand le premier clic est réalisé *)
+ let new_is_launched = is_launched || mouse_down in
+ if new_is_launched
+ (* jeu normal *)
+ then (
+ let contact = Raquette.collision mouse_x (x, y) dy in
+ let impulse = if contact then mouse_dx *. PhysicsConfig.impulse_factor else 0.0 in
+ let ndx = rebond_x br_qtree (x, y) (dx, dy) +. impulse in
+ let ndy = rebond_y br_qtree mouse_x (x, y) (dx, dy) in
+ let a_flux = Flux.constant (0.0, -.PhysicsConfig.gravity) in
+ let v_flux =
+ Flux.map (fun (vx, vy) -> vx +. ndx, vy +. ndy) (integre PhysicsConfig.timestep a_flux)
+ in
+ let x_flux =
+ Flux.map (fun (nx, ny) -> nx +. x, ny +. y) (integre PhysicsConfig.timestep v_flux)
+ in
+ let is_launched_flux = Flux.constant new_is_launched in
+ Flux.map3 (fun x v b -> x, v, b) x_flux v_flux is_launched_flux)
+ else (* la balle reste au niveau de la raquette jusqu'au premier clic ou elle est envoyée
+ a une vitesse y intiale et une vitesse x qui est la vitesse de la raquette *)
+ Flux.map2
+ (fun (mouse_x, mouse_dx, _) dy ->
+ ( (mouse_x, RacketConfig.position_y +. (BallConfig.radius /. 2.))
+ , (mouse_dx, dy)
+ , new_is_launched ))
+ raquette_flux
+ (Flux.constant dy)
 
-    let rec run_aux etat0 m_flux =
-      match Flux.uncons m_flux with
-      | Some ((mx, mdx), m_flux_next) ->
-        unless (FF.run etat0) contact (fun etat -> run_aux (rebond etat (mx,mdx)) m_flux_next)
-    
-    let run etat0 =
-      let mouse_flux = mouse_with_velocity PhysicsConfig.timestep in
-      run_aux etat0 mouse_flux
-  end
+(** [update_briques] crée le flux de briques (arbre des briques et nombre de briques touchées depuis la dernière mise à jour)
+ @param br_qtree arbre des briques
+ @param ball balle
+ @return flux de briques *)
+let update_briques : Briques.t -> ball -> (Briques.t * int) Flux.t =
+ fun br_qtree ((x, y), (dx, dy), _) ->
+ Flux.map
+ (fun br_qtree -> Briques.maj_briques br_qtree (x, y) (dx, dy))
+ (Flux.constant br_qtree)
 
-(*
-Mise en place de quadtree (ne pas mettre de briques à cheval sur 2 quadtree)
-
-
-
-Fonctions:
-Position de la balle -> CalculNextPostion()
-- Collision briques
-- Colission Mur
-- Collisions Raquette (si la plateforme arrive vite sur la balle, augmentation de la vitesse horrizontale)
-Position de la raquette
-- Placer au même endroit que la souris
-- Calculer la vitesse ?
-
-
-Gravité
-Acceleration (plus la partie avance / briques cassées plus la balle "rebondi" fort)
-Score
-Vie
-*)
+(** [update_etat] crée le flux d'état du jeu (raquette, balle, score, briques)
+ @param etat état du jeu
+ @return flux d'état du jeu *)
+let rec update_etat : etat -> etat Flux.t =
+ fun etat ->
+ let raquette, ball, score, lives, (br_qtree, nb_br_touched) = etat in
+ let score_flux = update_info score nb_br_touched in
+ let lives_flux = Flux.constant lives in
+ let raquette_flux = update_raquette () in
+ let ball_flux = update_balle raquette_flux raquette ball br_qtree in
+ let briques_flux = update_briques br_qtree ball in
+ (* check s'il y a le premier clic ou s'il y a contact avec quoique ce soit sauf le bord inférieur de la fenêtre *)
+ let update_cond : etat -> bool =
+ fun ((mouse_x, _, mouse_down), ((x, y), (dx, dy), is_launched), _, _, (br_qtree, _)) ->
+ ((not is_launched) && mouse_down)
+ || contact_x br_qtree (x, y) (dx, dy)
+ || contact_y mouse_x br_qtree (x, y) (dx, dy)
+ in
+ (* check s'il y a contact (mortel) avec le bord inférieur de la fenêtre *)
+ let death_cond : etat -> bool =
+ fun (_, ((_, y), (_, dy), _), _, _, _) -> y < -.WindowConfig.margin && dy <= 0.0
+ in
+ (* flux si rien ne change *)
+ let flux_continue =
+ Flux.map5 (fun p b s l br -> p, b, s, l, br) raquette_flux ball_flux score_flux lives_flux briques_flux
+ in
+ (* flux si le joueur perd des vies (termine la partie s'il n'en a plus) *)
+ let flux_death _ =
+ if lives == 1 then Flux.vide else update_etat (etat_init score (lives - 1))
+ in
+ (* le flux se met à jour à chaque contact ou se réinitialise en cas de mort *) 
+ Flux.unless (Flux.unless flux_continue update_cond update_etat) death_cond flux_death

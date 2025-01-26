@@ -38,3 +38,8 @@ let draw_raquette mouse_x =
   Graphics.set_color color;
   let x1, y1, x2, y2 = racket_coord_int mouse_x in
   Graphics.fill_rect x1 y1 (x2 - x1) (y2 - y1)
+
+let%test _ = racket_coord_float 100. = (50.,15.,150.,25.)
+let%test _ = racket_coord_int 100. = (50,15,150,25)
+let%test _ = collision 100. (90.,30.) 10. = false
+let%test _ = collision 100. (100.,35.) (-10.) = true
