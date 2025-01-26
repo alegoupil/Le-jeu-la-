@@ -41,7 +41,7 @@ let draw_state (raquette, ((bx, by), _, _), score, lives, (briques, _)) =
     (int_of_float RacketConfig.height);
   (* Affichage du score et des vies *)
   Graphics.set_color Graphics.black;
-  Graphics.moveto 10 (int_of_float (Box.supy +. 10.));
+  Graphics.moveto 10 (int_of_float (Box.supy));
   Graphics.draw_string (Format.sprintf "Score: %d  Lives: %d" score lives)
 
 
