@@ -70,11 +70,11 @@ let rebond_y br_qtree mouse_x (x, y) (dx, dy) =
   if contact_y mouse_x br_qtree (x, y) (dx, dy) then -.dy else dy
 
 
-(** [update_info score nb_br_touched] met à jour le score du joueur en fonction des briques touchées.
+(** [update_score score nb_br_touched] met à jour le score du joueur en fonction des briques touchées.
   @param score le score actuel
   @param nb_br_touched le nombre de briques touchées depuis la dernière mise à jour
   @return un flux constant représentant le nouveau score *)
-let update_info score nb_br_touched =
+let update_score score nb_br_touched =
   assert (score >= 0 && nb_br_touched >= 0);
   Flux.constant (score + (nb_br_touched * BrickConfig.points_per_brick))
 
@@ -120,11 +120,11 @@ let update_balle : raquette flux -> raquette -> ball -> Briques.t -> ball Flux.t
        (Flux.constant dy)
 
 
-(** [update_briques br_qtree ball] met à jour l'état des briques en fonction des collisions avec la balle.
+(** [update_quadrillage br_qtree ball] met à jour l'état des briques en fonction des collisions avec la balle.
   @param br_qtree l'arbre des briques actuel
   @param ball l'état actuel de la balle
   @return un flux contenant l'arbre des briques mis à jour et le nombre de briques touchées *)
-let update_briques : Briques.t -> ball -> (Briques.t * int) Flux.t =
+let update_quadrillage : Briques.t -> ball -> (Briques.t * int) Flux.t =
  fun br_qtree ((x, y), (dx, dy), _) ->
    Flux.map
      (fun br_qtree -> Briques.maj_briques br_qtree (x, y) (dx, dy))
@@ -136,11 +136,11 @@ let update_briques : Briques.t -> ball -> (Briques.t * int) Flux.t =
 let rec update_etat : etat -> etat Flux.t =
  fun etat ->
    let raquette, ball, score, lives, (br_qtree, nb_br_touched) = etat in
-   let score_flux = update_info score nb_br_touched in
+   let score_flux = update_score score nb_br_touched in
    let lives_flux = Flux.constant lives in
    let raquette_flux = update_raquette () in
    let ball_flux = update_balle raquette_flux raquette ball br_qtree in
-   let briques_flux = update_briques br_qtree ball in
+   let briques_flux = update_quadrillage br_qtree ball in
    let update_cond : etat -> bool =
      fun ((mouse_x, _, mouse_down), ((x, y), (dx, dy), is_launched), _, _, (br_qtree, _)) ->
        ((not is_launched) && mouse_down)
@@ -157,5 +157,3 @@ let rec update_etat : etat -> etat Flux.t =
      if lives == 1 then Flux.vide else update_etat (etat_init score (lives - 1) (br_qtree, nb_br_touched))
    in
    Flux.unless (Flux.unless flux_continue update_cond update_etat) death_cond flux_death
-
-
